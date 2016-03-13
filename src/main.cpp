@@ -23,9 +23,7 @@ shared_ptr<Program> prog2;
 shared_ptr<Program> lampProg;
 shared_ptr<Shape> world;
 shared_ptr<Shape> shape;
-shared_ptr<Shape> domino;
 shared_ptr<Shape> lamp;
-shared_ptr<Shape> marbletrack;
 
 
 // OpenGL handle to texture data
@@ -37,6 +35,9 @@ GLint h_texture1;
 
 Texture texture2;
 GLint h_texture2;
+
+Texture texture3;
+GLint h_texture3;
 
 int numLights;
 int g_GiboLen;
@@ -177,20 +178,14 @@ static void init()
    world->loadMesh(RESOURCE_DIR + "sphere.obj");
    world->resize();
    world->init(); */
-    
-    domino = make_shared<Shape>();
-    domino->loadMesh(RESOURCE_DIR + "domino.obj");
-    domino->resize();
-    domino->init();
+    string filepathMTL = RESOURCE_DIR + "garl.mtl";
     
     lamp = make_shared<Shape>();
-    lamp->loadMesh(RESOURCE_DIR + "garl.obj");
+    lamp->loadMesh(RESOURCE_DIR + "garl.obj", RESOURCE_DIR);
     lamp->resize();
     lamp->init();
     
     //Load material files
-    
-    string filepathMTL = RESOURCE_DIR + "garl.mtl";
 
 
 	// Initialize the GLSL programs
@@ -217,6 +212,7 @@ static void init()
 	texture0.setFilename(RESOURCE_DIR + "fur3.bmp");
   	texture1.setFilename(RESOURCE_DIR + "world.bmp");
   	texture2.setFilename(RESOURCE_DIR + "grass.bmp");
+    texture3.setFilename(RESOURCE_DIR + "wood.bmp");
     
    //////////////////////////////////////////////////////
    // Intialize textures
@@ -232,6 +228,10 @@ static void init()
 	texture2.setUnit(2);
    texture2.setName("Texture2");
    texture2.init();
+    
+    texture3.setUnit(3);
+    texture3.setName("Texture3");
+    texture3.init();
 
 	GLSL::printError();
 
@@ -263,6 +263,8 @@ static void init()
     lampProg->addUniform("P");
     lampProg->addUniform("M");
     lampProg->addUniform("V");
+    //lampProg->addUniform("Texture3");
+    //lampProg->addUniform("textOn");
     lampProg->addAttribute("lightPosition");
     lampProg->addUniform("MatAmb");
     lampProg->addUniform("MatDif");
@@ -272,6 +274,7 @@ static void init()
     lampProg->addAttribute("vertNor");
     lampProg->addAttribute("vertTex");
     lampProg->addAttribute("normalShowing");
+    //lampProg->addTexture(&texture3);
 
 }
 
@@ -288,8 +291,9 @@ static void render()
 	glfwGetFramebufferSize(window, &width, &height);
 	float aspect = width/(float)height;
 	glViewport(0, 0, width, height);
-    float lightPosition[] = {(float)-2.0, (float)2.0, (float)2.0};
-    
+    float lightPosition[] = {eye.x(), eye.y(), eye.z()};
+    cout << "EYE POS: " << eye.x() << " " << eye.y() << " " << eye.z() << endl;
+    cout << "LA: " << la.x() << " " << la.y() << " " << la.z() << endl;
     //Compute the scale for the pitch and yaw depending on the height
     pitchScale = (float)180/height * (float)(M_PI/180);
     yawScale = (float)180/width * (float)(M_PI/180);
@@ -320,6 +324,8 @@ static void render()
     
     V->pushMatrix();
     V->lookAt(eye, la, up);
+    
+    
 	
     //Draw the first lamp
     lampProg->bind();
@@ -329,12 +335,12 @@ static void render()
     M->pushMatrix();
     
         M->loadIdentity();
-        M->translate(Vector3f(5, 1, -4));
+        M->translate(Vector3f(2, 1, -1));
         M->rotate(180, Vector3f(0, 1, 0));
         M->scale(Vector3f(5, 5, 5));
         //MV->rotate(cTheta, Vector3f(0, 1, 0));
         glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
-        
+    
         lamp->draw(lampProg);
     M->popMatrix();
     lampProg->unbind();

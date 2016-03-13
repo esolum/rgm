@@ -148,8 +148,9 @@
 		2BACD0C5EFE84254891D01CB /* glfw3.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = glfw3.h; path = "../glfw-3.1.2/include/GLFW/glfw3.h"; sourceTree = SOURCE_ROOT; };
 		2BB052CA1B1B49619758A563 /* iokit_joystick.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.objc; fileEncoding = 4; name = iokit_joystick.m; path = "../glfw-3.1.2/src/iokit_joystick.m"; sourceTree = SOURCE_ROOT; };
 		4B6D407B9D4A47849423ECD9 /* cocoa_window.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.objc; fileEncoding = 4; name = cocoa_window.m; path = "../glfw-3.1.2/src/cocoa_window.m"; sourceTree = SOURCE_ROOT; };
+		6D0F19421C95D730002DCFB1 /* garl.mtl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = garl.mtl; path = ../../resources/garl.mtl; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D6BF8A91C8E8D74006948BD /* lamp_frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = lamp_frag.glsl; path = resources/lamp_frag.glsl; sourceTree = "<group>"; };
-		6D6BF8AA1C8E8DDD006948BD /* lamp_vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = lamp_vert.glsl; path = resources/lamp_vert.glsl; sourceTree = "<group>"; };
+		6D6BF8AA1C8E8DDD006948BD /* lamp_vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = lamp_vert.glsl; path = ../../resources/lamp_vert.glsl; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B8F28D669E341F9BE23BA96 /* libglfw3.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libglfw3.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		81838685E7AD41C2BEAEA838 /* cocoa_platform.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = cocoa_platform.h; path = "../glfw-3.1.2/src/cocoa_platform.h"; sourceTree = SOURCE_ROOT; };
 		84F65CF226044BDDA8C4E124 /* iokit_joystick.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = iokit_joystick.h; path = "../glfw-3.1.2/src/iokit_joystick.h"; sourceTree = SOURCE_ROOT; };
@@ -188,6 +189,7 @@
 				FA769E18AEB64037B3917F3B /* tex_frag0.glsl */,
 				6D6BF8A91C8E8D74006948BD /* lamp_frag.glsl */,
 				6D6BF8AA1C8E8DDD006948BD /* lamp_vert.glsl */,
+				6D0F19421C95D730002DCFB1 /* garl.mtl */,
 				BCE1113A49FB4CBDAA77E242 /* tex_frag1.glsl */,
 				284992616C2A4EBC944A5535 /* tex_frag2.glsl */,
 				0D5D15270E154755B62C7D64 /* tex_vert.glsl */,

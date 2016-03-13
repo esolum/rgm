@@ -24,7 +24,7 @@ Shape::~Shape()
 {
 }
 
-void Shape::loadMesh(const string &meshName)
+void Shape::loadMesh(const string &meshName, const string &mtlName)
 {
 	// Load geometry
 	// Some obj files contain material information.
@@ -32,7 +32,7 @@ void Shape::loadMesh(const string &meshName)
 	vector<tinyobj::shape_t> shapes;
 	vector<tinyobj::material_t> objMaterials;
 	string errStr;
-	bool rc = tinyobj::LoadObj(shapes, objMaterials, errStr, meshName.c_str());
+	bool rc = tinyobj::LoadObj(shapes, objMaterials, errStr, meshName.c_str(), mtlName.c_str());
 	if(!rc) {
 		cerr << errStr << endl;
 	} else {
@@ -44,29 +44,79 @@ void Shape::loadMesh(const string &meshName)
         
         for(int i=0; i < shapes.size(); i++) {
             posBuf = shapes[i].mesh.positions;
-            norBuf = shapes[i].mesh.normals;
+            //norBuf = shapes[i].mesh.normals;
             texBuf = shapes[i].mesh.texcoords;
             eleBuf = shapes[i].mesh.indices;
+            
+            for (size_t v = 0; v < posBuf.size(); v++) {
+                norBuf.push_back(0);
+            }
+            
+            for(size_t f = 0; f < eleBuf.size(); f += 3) {
+                float a[3], b[3];
+                float cross[3];
+                
+                
+                a[0] = posBuf[3 * eleBuf[f + 1]] - posBuf[3 * eleBuf[f]];
+                a[1] = posBuf[3 * eleBuf[f + 1] + 1] - posBuf[3 * eleBuf[f] + 1];
+                a[2] = posBuf[3 * eleBuf[f + 1] + 2] - posBuf[3 * eleBuf[f] + 2];
+                
+                b[0] = posBuf[3 * eleBuf[f + 2]] - posBuf[3 * eleBuf[f]];
+                b[1] = posBuf[3 * eleBuf[f + 2] + 1] - posBuf[3 * eleBuf[f] + 1];
+                b[2] = posBuf[3 * eleBuf[f + 2] + 2] - posBuf[3 * eleBuf[f] + 2];
+                
+                
+                cross[0] = a[1]*b[2] - a[2]*b[1];
+                cross[1] = a[2]*b[0] - a[0]*b[2];
+                cross[2] = a[0]*b[1] - a[1]*b[0];
+                
+                
+                
+                norBuf[3 * eleBuf[f]] += cross[0];
+                norBuf[3 * eleBuf[f] + 1] += cross[1];
+                norBuf[3 * eleBuf[f] + 2] += cross[2];
+                
+                norBuf[3 * eleBuf[f+1]] += cross[0];
+                norBuf[3 * eleBuf[f+1] + 1] += cross[1];
+                norBuf[3 * eleBuf[f+1] + 2] += cross[2];
+                
+                norBuf[3 * eleBuf[f+2]] += cross[0];
+                norBuf[3 * eleBuf[f+2] + 1] += cross[1];
+                norBuf[3 * eleBuf[f+2] + 2] += cross[2];
+            }
+            
+            for(size_t i = 0; i < norBuf.size(); i += 3) {
+                Eigen::Vector3d normal(norBuf[i], norBuf[i + 1], norBuf[i + 2]);
+                normal.normalize();
+                
+                norBuf[i] = normal.x();
+                norBuf[i+1] = normal.y();
+                norBuf[i+2] = normal.z();
+            }
             
             posBufs.push_back(posBuf);
             norBufs.push_back(norBuf);
             texBufs.push_back(texBuf);
             eleBufs.push_back(eleBuf);
             
+            
+            
+            
             if(objMaterials.size() > 0) {
-                ambBuf.push_back(objMaterials[i].ambient[0]);
-                ambBuf.push_back(objMaterials[i].ambient[1]);
-                ambBuf.push_back(objMaterials[i].ambient[2]);
+                int matNum = shapes[i].mesh.material_ids[0];
+                ambBuf.push_back(objMaterials[matNum].ambient[0]);
+                ambBuf.push_back(objMaterials[matNum].ambient[1]);
+                ambBuf.push_back(objMaterials[matNum].ambient[2]);
                 
-                specBuf.push_back(objMaterials[i].specular[0]);
-                specBuf.push_back(objMaterials[i].specular[1]);
-                specBuf.push_back(objMaterials[i].specular[2]);
+                specBuf.push_back(objMaterials[matNum].specular[0]);
+                specBuf.push_back(objMaterials[matNum].specular[1]);
+                specBuf.push_back(objMaterials[matNum].specular[2]);
                 
-                difBuf.push_back(objMaterials[i].diffuse[0]);
-                difBuf.push_back(objMaterials[i].diffuse[1]);
-                difBuf.push_back(objMaterials[i].diffuse[2]);
+                difBuf.push_back(objMaterials[matNum].diffuse[0]);
+                difBuf.push_back(objMaterials[matNum].diffuse[1]);
+                difBuf.push_back(objMaterials[matNum].diffuse[2]);
                 
-                shineBuf.push_back(objMaterials[i].shininess);
+                shineBuf.push_back(objMaterials[matNum].shininess);
             }
             
         }
@@ -211,6 +261,7 @@ void Shape::InitSegment(int i)
         glBufferData(GL_ARRAY_BUFFER, norBufs[i].size()*sizeof(float), &norBufs[i][0], GL_STATIC_DRAW);
     }
     
+    
     // Send the texture array to the GPU
     if(texBufs[i].empty()) {
         //texBufID = 0;
@@ -229,6 +280,7 @@ void Shape::InitSegment(int i)
         glBufferData(GL_ARRAY_BUFFER, texBufs[i].size()*sizeof(float), &texBufs[i][0], GL_STATIC_DRAW);
     }
     
+    
     // Send the element array to the GPU
     glGenBuffers(1, &eleBufID);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eleBufID);
@@ -238,14 +290,17 @@ void Shape::InitSegment(int i)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
-    assert(glGetError() == GL_NO_ERROR);
+    GLenum gr2 = glGetError();
+    assert(gr2 == GL_NO_ERROR);
+    
 }
 
 void Shape::draw(const shared_ptr<Program> prog)
 {
+    
     //Somehow make it so that drawing goes through the shape[] array and changes the buffs and stuff
     
-    for(int i=0; i < this->size; i++ ) {
+    for(int i=1; i < this->size; i++ ) {
         InitSegment(i);
         // Bind position buffer
         int h_pos = prog->getAttribute("vertPos");
@@ -269,7 +324,18 @@ void Shape::draw(const shared_ptr<Program> prog)
             glVertexAttribPointer(h_tex, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
         }
         
+        /*if(i == 2) {
+            glUniform1i(prog->getUniform("textOn"), 1);
+        }
+        else {
+            glUniform1i(prog->getUniform("textOn"), 0);
+        }*/
+        
         if(numMaterials > 0) {
+            //cout << "MATERIAL:" << endl;
+            //cout << "Ambient: " << ambBuf[i*3] << " " << ambBuf[i*3 + 1] << " " << ambBuf[i*3 + 2] << endl;
+            //cout << "Diffuse: " << difBuf[i*3] << " " << difBuf[i*3 + 1] << " " << difBuf[i*3 + 2] << endl;
+            //cout << "Spec: " << specBuf[i*3] << " " << specBuf[i*3 + 1] << " " << specBuf[i*3 + 2] << endl;
             //Pass in ambient color
             glUniform3f(prog->getUniform("MatAmb"), ambBuf[i*3], ambBuf[i*3 + 1],  ambBuf[i*3 + 2]);
             
@@ -282,7 +348,9 @@ void Shape::draw(const shared_ptr<Program> prog)
             
             
             //Pass in shininess
-            glVertexAttrib1f(prog->getUniform("Shine"), shineBuf[i]);
+            glUniform1f(prog->getUniform("Shine"), shineBuf[i]);
+            
+            
         }
         
         

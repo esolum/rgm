@@ -15,7 +15,7 @@ class Shape
 public:
 	Shape();
 	virtual ~Shape();
-	void loadMesh(const std::string &meshName);
+    void loadMesh(const std::string &meshName, const std::string &mtlName);
 	void init();
     void InitSegment(int i);
 	void draw(const std::shared_ptr<Program> prog);
@@ -35,7 +35,6 @@ private:
     std::vector< std::vector< float > > norBufs;
     std::vector< std::vector< float > > texBufs;
     std::vector< std::vector< unsigned int > > eleBufs;
-    
 	unsigned eleBufID;
 	unsigned posBufID;
 	unsigned norBufID;

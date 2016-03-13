@@ -936,6 +936,7 @@ bool LoadObj(std::vector<shape_t> &shapes, // [output]
 
     // load mtl
     if ((0 == strncmp(token, "mtllib", 6)) && isSpace((token[6]))) {
+        std::cout << "GOING TO READ MATERIAL\n";
       char namebuf[TINYOBJ_SSCANF_BUFFER_SIZE];
       token += 7;
 #ifdef _MSC_VER

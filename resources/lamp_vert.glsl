@@ -8,10 +8,11 @@ uniform mat4 V;
 in vec3 lightPosition;
 in float normalShowing;
 out vec3 fragNor;
-out vec3 LightDirection_cameraspace;
+out vec3 lightDir;
 out float mode;
 out vec3 View;
 out vec3 vTexCoord;
+out vec3 vColor;
 
 
 void main()
@@ -22,8 +23,12 @@ void main()
     View = 0 - (V * M *vertPos).xyz;
     
     mode = normalShowing;
-    LightDirection_cameraspace = lightPosition - position_worldspace;
+    lightDir = lightPosition - position_worldspace;
     
+    /* a color that could be blended - or be shading */
+    vColor = vec3(max(dot(fragNor, normalize(lightDir)), 0));
     /* pass through the texture coordinates to be interpolated */
     vTexCoord = vertTex;
+    
+
 }
