@@ -1,5 +1,6 @@
-/* Base code for texture mapping lab */
-/* includes three images and three meshes - Z. Wood 2016 */
+/* Rube Goldberg Machine Simulation - Erica Solum
+   Includes Base code for texture mapping lab
+   includes three images and three meshes - Z. Wood 2016 */
 #include <iostream>
 #define GLEW_STATIC
 #include <GL/glew.h>
