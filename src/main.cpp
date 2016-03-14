@@ -198,6 +198,8 @@ static void resize_callback(GLFWwindow *window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
+
+
 /* code to define the ground plane */
 static void initGeom() {
 
@@ -467,12 +469,12 @@ static void render()
     glUniformMatrix4fv(lampProg->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
     glUniformMatrix4fv(lampProg->getUniform("V"), 1, GL_FALSE, V->topMatrix().data());
     glVertexAttrib3fv(lampProg->getAttribute("lightPosition"), lightPosition);
-    M->pushMatrix();
     
-        M->loadIdentity();
-        M->translate(Vector3f(6, 0.32, -3));
+     M->loadIdentity();
+     M->pushMatrix();
+        M->translate(Vector3f(6, 0.57, -3));
         M->rotate(180, Vector3f(0, 1, 0));
-        M->scale(Vector3f(7, 7, 7));
+        M->scale(Vector3f(8, 8, 8));
         //MV->rotate(cTheta, Vector3f(0, 1, 0));
         glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
     
@@ -480,23 +482,9 @@ static void render()
     M->popMatrix();
     
     M->pushMatrix();
-    
-        M->loadIdentity();
-        M->translate(Vector3f(6, 0.32, 3));
+        M->translate(Vector3f(6, 0.57, 3));
         M->rotate(180, Vector3f(0, 1, 0));
-        M->scale(Vector3f(7, 7, 7));
-        //MV->rotate(cTheta, Vector3f(0, 1, 0));
-        glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
-        
-        lamp->draw(lampProg);
-    M->popMatrix();
-    
-    M->pushMatrix();
-    
-        M->loadIdentity();
-        M->translate(Vector3f(-6, 0.32, 3));
-        M->rotate(180, Vector3f(0, 1, 0));
-        M->scale(Vector3f(7, 7, 7));
+        M->scale(Vector3f(8, 8, 8));
         //MV->rotate(cTheta, Vector3f(0, 1, 0));
         glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
         
@@ -504,11 +492,19 @@ static void render()
     M->popMatrix();
     
     M->pushMatrix();
-    
-        M->loadIdentity();
-        M->translate(Vector3f(-6, 0.32, -3));
+        M->translate(Vector3f(-6, 0.57, 3));
         M->rotate(180, Vector3f(0, 1, 0));
-        M->scale(Vector3f(7, 7, 7));
+        M->scale(Vector3f(8, 8, 8));
+        //MV->rotate(cTheta, Vector3f(0, 1, 0));
+        glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+        
+        lamp->draw(lampProg);
+    M->popMatrix();
+    
+    M->pushMatrix();
+        M->translate(Vector3f(-6, 0.57, -3));
+        M->rotate(180, Vector3f(0, 1, 0));
+        M->scale(Vector3f(8, 8, 8));
         //MV->rotate(cTheta, Vector3f(0, 1, 0));
         glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
         
@@ -516,7 +512,44 @@ static void render()
     M->popMatrix();
     lampProg->unbind();
     
+    /* DRAW THE RAMP */
+    boardProg->bind();
+        glUniformMatrix4fv(boardProg->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
+        glUniformMatrix4fv(boardProg->getUniform("V"), 1, GL_FALSE, V->topMatrix().data());
+        glVertexAttrib3fv(boardProg->getAttribute("lightPosition"), lightPosition);
+        glUniform3f(boardProg->getUniform("MatAmb"), 0.000000, 0.000000, 0.000000);
+        glUniform3f(boardProg->getUniform("MatDif"), 0.696471, 0.097255, 0.097255);
+        glUniform3f(boardProg->getUniform("Spec"), 0.500000, 0.500000, 0.500000);
+        glUniform1f(boardProg->getUniform("Shine"), 96.078431);
+        M->pushMatrix();
+            M->loadIdentity();
+            //Global translation in case I want to move it later
+            M->translate(Vector3f(0, -0.5, 0));
+            M->pushMatrix();
+                M->rotate(-10, Vector3f(0, 0, 1));
+                M->scale(Vector3f(4, 0.1, 1));
+                glUniformMatrix4fv(boardProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+                board->draw(boardProg);
+            M->popMatrix();
     
+            //Code for the legs
+            M->pushMatrix();
+    
+                M->pushMatrix();
+                    M->translate(Vector3f(-3.8, -0.2, 0.8));
+                    M->scale(Vector3f(0.1, 0.8, 0.1));
+                    glUniformMatrix4fv(boardProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+                    board->draw(boardProg);
+                M->popMatrix();
+                M->translate(Vector3f(-3.8, -0.2, -0.8));
+                M->scale(Vector3f(0.1, 0.8, 0.1));
+    
+                glUniformMatrix4fv(boardProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+                board->draw(boardProg);
+            M->popMatrix();
+    
+        M->popMatrix();
+    boardProg->unbind();
     
     
     
