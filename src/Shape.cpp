@@ -42,6 +42,14 @@ void Shape::loadMesh(const string &meshName, const string &mtlName)
         size = shapes.size();
         numMaterials = objMaterials.size();
         
+        std::string str1 ("../resources/garl.obj");
+        if(str1.compare(meshName)== 0) {
+            startingShape = 1;
+        }
+        else {
+            startingShape = 0;
+        }
+        
         for(int i=0; i < shapes.size(); i++) {
             posBuf = shapes[i].mesh.positions;
             //norBuf = shapes[i].mesh.normals;
@@ -300,7 +308,7 @@ void Shape::draw(const shared_ptr<Program> prog)
     
     //Somehow make it so that drawing goes through the shape[] array and changes the buffs and stuff
     
-    for(int i=1; i < this->size; i++ ) {
+    for(int i=startingShape; i < this->size; i++ ) {
         InitSegment(i);
         // Bind position buffer
         int h_pos = prog->getAttribute("vertPos");

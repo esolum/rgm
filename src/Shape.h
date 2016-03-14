@@ -41,6 +41,7 @@ private:
 	unsigned texBufID;
     int size;
     int numMaterials;
+    int startingShape;
 };
 
 #endif

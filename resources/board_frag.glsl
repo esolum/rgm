@@ -34,13 +34,13 @@ void main()
     //color = vec4(baseColor.r*vColor.r, baseColor.g*vColor.g, baseColor.b*vColor.b, 1);
     
     /*if(textOn == 1) {
-        vec4 texColor3 = texture(Texture3, vec2(vTexCoord.x, vTexCoord.y));
-        
-        color = vec4(texColor3.r*vColor.r, texColor3.g*vColor.g, texColor3.b*vColor.b, 1);
-    }
-    else {
-        color = baseColor;
-    }*/
+     vec4 texColor3 = texture(Texture3, vec2(vTexCoord.x, vTexCoord.y));
+     
+     color = vec4(texColor3.r*vColor.r, texColor3.g*vColor.g, texColor3.b*vColor.b, 1);
+     }
+     else {
+     color = baseColor;
+     }*/
     //color = vec4(MatDif * LightColor * cosTheta + MatAmb, 1.0);
     
     if (mode == 1) {

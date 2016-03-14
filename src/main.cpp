@@ -21,9 +21,12 @@ shared_ptr<Program> prog0;
 shared_ptr<Program> prog1;
 shared_ptr<Program> prog2;
 shared_ptr<Program> lampProg;
+shared_ptr<Program> boardProg;
 shared_ptr<Shape> world;
 shared_ptr<Shape> shape;
 shared_ptr<Shape> lamp;
+shared_ptr<Shape> board;
+shared_ptr<Shape> ball;
 
 
 // OpenGL handle to texture data
@@ -40,18 +43,24 @@ Texture texture3;
 GLint h_texture3;
 
 int numLights;
+float offset = 0.0;
 int g_GiboLen;
 int g_width, g_height;
 float cTheta = 0;
 float cHeight = 0;
+float camOffsetX = 0;
 float pitchScale;
 float yawScale;
 float phi = 0;
 float theta = 0;
 float radius = 20.0;
-Vector3f eye((float)0.0, (float) 1, (float)0.0);
+float lastYPos = -1;
+float lastXPos = -1;
+float startingXpos, startingYpos;
+bool active = false;
+Vector3f eye((float)0, (float) 3, (float)15);
 Vector3f up((float)0.0, (float) 1.0, (float)0.0);
-Vector3f la((float)radius*cos(phi)*cos(theta), (float)radius*sin(phi), (float)radius*cos(phi)*cos(90.0 - theta));
+Vector3f la(0, 0, 0);
 Vector3f w(3);
 Vector3f u(3);
 Vector3f v(3);
@@ -68,7 +77,8 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
 {
 	if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
-   } else if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+   }
+    /*else if (key == GLFW_KEY_A && action == GLFW_PRESS) {
       cTheta += 5;
    } else if (key == GLFW_KEY_D && action == GLFW_PRESS) {
       cTheta -= 5;
@@ -76,7 +86,95 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
       cHeight += .5;
    } else if (key == GLFW_KEY_S && action == GLFW_PRESS) {
       cHeight -= 0.5;
-   }
+   }*/
+    
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+    //Move light to the left
+    else if(key == GLFW_KEY_Q && action == GLFW_PRESS) {
+        offset -= 1;
+    }
+    //Move light to the right
+    else if(key == GLFW_KEY_E && action == GLFW_PRESS) {
+        offset += 1;
+    }
+
+    //Move left
+    else if(key == GLFW_KEY_A && action == GLFW_PRESS) {
+        eye = eye - 0.5*u;
+        la = la - 0.5*u;
+    }
+    //Move right
+    else if(key == GLFW_KEY_D && action == GLFW_PRESS) {
+        eye = eye + 0.5*u;
+        la = la + 0.5*u;
+    }
+    //Zoom in
+    else if(key == GLFW_KEY_W && action == GLFW_PRESS) {
+        eye = eye - 0.5*w;
+        la = la - 0.5*w;
+    }
+    //Zoom out
+    else if(key == GLFW_KEY_S && action == GLFW_PRESS) {
+        eye = eye + 0.5*w;
+        la = la + 0.5*w;
+    }
+}
+
+//Callback function that tracks the cursor position.
+static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    
+    // Tracking position it's moved at least once before
+    if(active && lastYPos != -1 && lastXPos != -1) {
+        float increasePhi = (float) pitchScale * (ypos - lastYPos);
+        float increaseTheta = (float) yawScale * (lastXPos - xpos);
+        
+        // Cap the movement at 160 degrees and add the changes.
+        if(phi + increasePhi < 2.79253 && phi + increasePhi > -2.79253) {
+            phi += increasePhi;
+            lastYPos = ypos;
+        }
+        
+        theta += increaseTheta;
+        lastXPos = xpos;
+        
+        
+        //Update the look at point after changing the view.
+        la(0) = (float)radius*cos(phi)*cos(theta);
+        la(1) = (float)radius*sin(phi);
+        la(2) = (float)radius*cos(phi)*cos(90.0 - theta);
+    }
+    
+    //Start tracking its last position if we haven't already.
+    else if(active) {
+        lastYPos = ypos;
+        lastXPos = xpos;
+    }
+}
+
+static void mouse_callback(GLFWwindow *window, int button, int action, int mods)
+{
+    //Start tracking the cursor position
+    if (action == GLFW_PRESS) {
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+        
+        startingXpos = xpos;
+        startingYpos = ypos;
+        active = true;
+    }
+    //Upon release, stop tracking the cursor and reset the last cursor positions
+    if(action == GLFW_RELEASE) {
+        
+        active = false;
+        
+        lastXPos = -1;
+        lastYPos = -1;
+    }
 }
 
 
@@ -103,7 +201,7 @@ static void resize_callback(GLFWwindow *window, int width, int height) {
 /* code to define the ground plane */
 static void initGeom() {
 
-   float g_groundSize = 20;
+   float g_groundSize = 10;
    float g_groundY = -1.5;
 
   // A x-z plane at y = g_groundY of dimension [-g_groundSize, g_groundSize]^2
@@ -126,9 +224,9 @@ static void initGeom() {
 
   static GLfloat GrndTex[] = {
       0, 0, // back
-      0, 8,
-      8, 8,
-      8, 0 };
+      0, 30,
+      30, 30,
+      30, 0 };
 
     unsigned short idx[] = {0, 1, 2, 0, 2, 3};
 
@@ -185,6 +283,16 @@ static void init()
     lamp->resize();
     lamp->init();
     
+    board = make_shared<Shape>();
+    board->loadMesh(RESOURCE_DIR + "cube.obj", RESOURCE_DIR);
+    board->resize();
+    board->init();
+    
+    ball = make_shared<Shape>();
+    ball->loadMesh(RESOURCE_DIR + "sphere.obj", RESOURCE_DIR);
+    ball->resize();
+    ball->init();
+    
     //Load material files
 
 
@@ -208,6 +316,11 @@ static void init()
     lampProg->setVerbose(true);
     lampProg->setShaderNames(RESOURCE_DIR + "lamp_vert.glsl", RESOURCE_DIR + "lamp_frag.glsl");
     lampProg->init();
+    
+    boardProg = make_shared<Program>();
+    boardProg->setVerbose(true);
+    boardProg->setShaderNames(RESOURCE_DIR + "board_vert.glsl", RESOURCE_DIR + "board_frag.glsl");
+    boardProg->init();
 	
 	texture0.setFilename(RESOURCE_DIR + "fur3.bmp");
   	texture1.setFilename(RESOURCE_DIR + "world.bmp");
@@ -237,27 +350,33 @@ static void init()
 
 	/// Add uniform and attributes to each of the programs
 	prog0->addUniform("P");
-	prog0->addUniform("MV");
+	prog0->addUniform("M");
+    prog0->addUniform("V");
 	prog0->addUniform("Texture0");
 	prog0->addAttribute("vertPos");
-   prog0->addAttribute("vertNor");
+    prog0->addAttribute("vertNor");
 	prog0->addAttribute("vertTex");
+    prog0->addAttribute("lightPosition");
 	prog0->addTexture(&texture0);
 	
 	prog1->addUniform("P");
-	prog1->addUniform("MV");
+	prog1->addUniform("M");
+    prog1->addUniform("V");
 	prog1->addUniform("Texture1");
 	prog1->addAttribute("vertPos");
-   prog1->addAttribute("vertNor");
+    prog1->addAttribute("vertNor");
 	prog1->addAttribute("vertTex");
+    prog1->addAttribute("lightPosition");
 	prog1->addTexture(&texture1);
 	
 	prog2->addUniform("P");
-	prog2->addUniform("MV");
+	prog2->addUniform("M");
+    prog2->addUniform("V");
 	prog2->addUniform("Texture2");
 	prog2->addAttribute("vertPos");
-   prog2->addAttribute("vertNor");
+    prog2->addAttribute("vertNor");
 	prog2->addAttribute("vertTex");
+    prog2->addAttribute("lightPosition");
 	prog2->addTexture(&texture2);
     
     lampProg->addUniform("P");
@@ -275,6 +394,22 @@ static void init()
     lampProg->addAttribute("vertTex");
     lampProg->addAttribute("normalShowing");
     //lampProg->addTexture(&texture3);
+    
+    boardProg->addUniform("P");
+    boardProg->addUniform("M");
+    boardProg->addUniform("V");
+    //boardProg->addUniform("Texture3");
+    //boardProg->addUniform("textOn");
+    boardProg->addAttribute("lightPosition");
+    boardProg->addUniform("MatAmb");
+    boardProg->addUniform("MatDif");
+    boardProg->addUniform("Spec");
+    boardProg->addUniform("Shine");
+    boardProg->addAttribute("vertPos");
+    boardProg->addAttribute("vertNor");
+    boardProg->addAttribute("vertTex");
+    boardProg->addAttribute("normalShowing");
+    //boardProg->addTexture(&texture3);
 
 }
 
@@ -291,9 +426,9 @@ static void render()
 	glfwGetFramebufferSize(window, &width, &height);
 	float aspect = width/(float)height;
 	glViewport(0, 0, width, height);
-    float lightPosition[] = {eye.x(), eye.y(), eye.z()};
-    cout << "EYE POS: " << eye.x() << " " << eye.y() << " " << eye.z() << endl;
-    cout << "LA: " << la.x() << " " << la.y() << " " << la.z() << endl;
+    float lightPosition[] = {(float)3.0 + offset, (float)2.0, (float)-1};
+    //cout << "EYE POS: " << eye.x() << " " << eye.y() << " " << eye.z() << endl;
+    //cout << "LA: " << la.x() << " " << la.y() << " " << la.z() << endl;
     //Compute the scale for the pitch and yaw depending on the height
     pitchScale = (float)180/height * (float)(M_PI/180);
     yawScale = (float)180/width * (float)(M_PI/180);
@@ -335,15 +470,55 @@ static void render()
     M->pushMatrix();
     
         M->loadIdentity();
-        M->translate(Vector3f(2, 1, -1));
+        M->translate(Vector3f(6, 0.32, -3));
         M->rotate(180, Vector3f(0, 1, 0));
-        M->scale(Vector3f(5, 5, 5));
+        M->scale(Vector3f(7, 7, 7));
         //MV->rotate(cTheta, Vector3f(0, 1, 0));
         glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
     
         lamp->draw(lampProg);
     M->popMatrix();
+    
+    M->pushMatrix();
+    
+        M->loadIdentity();
+        M->translate(Vector3f(6, 0.32, 3));
+        M->rotate(180, Vector3f(0, 1, 0));
+        M->scale(Vector3f(7, 7, 7));
+        //MV->rotate(cTheta, Vector3f(0, 1, 0));
+        glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+        
+        lamp->draw(lampProg);
+    M->popMatrix();
+    
+    M->pushMatrix();
+    
+        M->loadIdentity();
+        M->translate(Vector3f(-6, 0.32, 3));
+        M->rotate(180, Vector3f(0, 1, 0));
+        M->scale(Vector3f(7, 7, 7));
+        //MV->rotate(cTheta, Vector3f(0, 1, 0));
+        glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+        
+        lamp->draw(lampProg);
+    M->popMatrix();
+    
+    M->pushMatrix();
+    
+        M->loadIdentity();
+        M->translate(Vector3f(-6, 0.32, -3));
+        M->rotate(180, Vector3f(0, 1, 0));
+        M->scale(Vector3f(7, 7, 7));
+        //MV->rotate(cTheta, Vector3f(0, 1, 0));
+        glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+        
+        lamp->draw(lampProg);
+    M->popMatrix();
     lampProg->unbind();
+    
+    
+    
+    
     
     //Draw marble track
     /*marbleProg->bind();
@@ -401,10 +576,12 @@ static void render()
      */
 	//draw the ground plane	
 	prog2->bind();
-    MV->pushMatrix();
-    MV->loadIdentity();
+    M->pushMatrix();
+    M->loadIdentity();
 	glUniformMatrix4fv(prog2->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
-	glUniformMatrix4fv(prog2->getUniform("MV"), 1, GL_FALSE, MV->topMatrix().data());
+    glUniformMatrix4fv(lampProg->getUniform("V"), 1, GL_FALSE, V->topMatrix().data());
+	glUniformMatrix4fv(prog2->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+    glVertexAttrib3fv(lampProg->getAttribute("lightPosition"), lightPosition);
 
 	glEnableVertexAttribArray(0);
    glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
@@ -429,7 +606,7 @@ static void render()
 	prog2->unbind();
 
 	// Pop matrix stacks.
-    MV->popMatrix();
+    M->popMatrix();
     V->popMatrix();
 	P->popMatrix();
 }
@@ -437,8 +614,8 @@ static void render()
 int main(int argc, char **argv)
 {
 
-	g_width = 640;
-	g_height = 480;
+	g_width = 960;
+	g_height = 720;
 	/* we will always need to load external shaders to set up where 
 	if(argc < 2) {
       cout << "Please specify the resource directory." << endl;
@@ -489,6 +666,10 @@ int main(int argc, char **argv)
 	glfwSwapInterval(1);
 	// Set keyboard callback.
 	glfwSetKeyCallback(window, key_callback);
+    //set the mouse call back
+    glfwSetMouseButtonCallback(window, mouse_callback);
+    //set the cursor callback
+    glfwSetCursorPosCallback(window, cursor_position_callback);
 	//set the window resize call back
 	glfwSetFramebufferSizeCallback(window, resize_callback);
 
