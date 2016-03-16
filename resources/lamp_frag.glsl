@@ -7,7 +7,7 @@ in vec3 fragNor;
 in vec3 lightDir;
 in float mode;
 in vec3 View;
-in vec3 vTexCoord;
+in vec2 vTexCoord;
 in vec3 vColor;
 out vec4 color;
 

@@ -10,6 +10,9 @@ in vec3 View;
 out vec4 Outcolor;
 
 void main() {
+    
+    //Fragment shader for old world
+    
     vec3 normal = normalize(fragNor);
     vec3 lightNormal = normalize(lightDir);
     

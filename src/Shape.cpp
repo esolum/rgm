@@ -43,13 +43,15 @@ void Shape::loadMesh(const string &meshName, const string &mtlName)
         numMaterials = objMaterials.size();
         
         std::string str1 ("../resources/garl.obj");
-        if(str1.compare(meshName)== 0) {
+        std::string str2 ("../resources/bs.obj");
+        if(str1.compare(meshName)== 0 || str2.compare(meshName)== 0) {
             startingShape = 1;
         }
         else {
             startingShape = 0;
         }
         
+       
         for(int i=0; i < shapes.size(); i++) {
             posBuf = shapes[i].mesh.positions;
             //norBuf = shapes[i].mesh.normals;
@@ -299,6 +301,7 @@ void Shape::InitSegment(int i)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     GLenum gr2 = glGetError();
+    
     assert(gr2 == GL_NO_ERROR);
     
 }
@@ -329,7 +332,7 @@ void Shape::draw(const shared_ptr<Program> prog)
         if(h_tex != -1 && texBufID != 0) {
             GLSL::enableVertexAttribArray(h_tex);
             glBindBuffer(GL_ARRAY_BUFFER, texBufID);
-            glVertexAttribPointer(h_tex, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
+            glVertexAttribPointer(h_tex, 2, GL_FLOAT, GL_FALSE, 0, (const void *)0);
         }
         
         /*if(i == 2) {
