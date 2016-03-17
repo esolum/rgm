@@ -24,12 +24,14 @@ shared_ptr<Program> prog2;
 shared_ptr<Program> lampProg;
 shared_ptr<Program> boardProg;
 shared_ptr<Program> ballProg;
+shared_ptr<Program> wallProg;
 shared_ptr<Shape> world;
 shared_ptr<Shape> shape;
 shared_ptr<Shape> lamp;
 shared_ptr<Shape> board;
 shared_ptr<Shape> ball;
-
+shared_ptr<Shape> cube;
+shared_ptr<Shape> button;
 
 // OpenGL handle to texture data
 Texture texture0;
@@ -68,7 +70,12 @@ Vector3f ballPos(-3.8, 1.83, 0);
 Vector3f lastBallPos(3);
 
 //MARK: Lights
-Vector3f light1();
+GLfloat light1[] = {6, 1.17, 3};
+GLfloat light2[] = {6, 1.17, -3};
+GLfloat light3[] = {-6, 1.17, 3};
+GLfloat light4[] = {-6, 1.17, -3};
+GLfloat lightOn[] = {1.0, 1.0, 1.0};
+GLfloat lightOff[] = {0, 0, 0};
 
 
 //Physics sturf
@@ -84,6 +91,18 @@ Vector3f v(3);
 
 //global data for ground plane
 GLuint GrndBuffObj, GrndNorBuffObj, GrndTexBuffObj, GIndxBuffObj;
+
+struct PointLight {
+    Vector3f position;
+    
+    float constant;
+    float linear;
+    float quadratic;
+    
+    Vector3f ambient;
+    Vector3f diffuse;
+    Vector3f specular;
+};
 
 static void error_callback(int error, const char *description)
 {
@@ -234,11 +253,46 @@ void computePhysics() {
     lastBallPos = ballPos;
     ballPos = ballPos + t*path;
     
-    float distance = (ballPos -  ballStart).squaredNorm();
-    distance = sqrt(pow((ballPos.x()-ballStart.x()), 2) + pow((ballPos.y()-ballStart.y()), 2));
+    float distance = sqrt(pow((ballPos.x()-ballStart.x()), 2) + pow((ballPos.y()-ballStart.y()), 2));
     
-    bRot = -distance* 2.5 * (180/PI);
-    cout << "C\nomputed angle of rotation: " << bRot << endl;
+    bRot = -distance* 2 * (180/PI);
+    
+    if(ballPos.x() > -1.9 && ballPos.x() < 0 ) {
+        numLights = 2;
+    }
+    if(ballPos.x() > 0 && ballPos.x() < 1.9 ) {
+        numLights = 3;
+    }
+    if(ballPos.x() > 1.9 && ballPos.x() < 3.8 ) {
+        numLights = 4;
+    }
+}
+
+void setUpLights(const shared_ptr<Program> prog) {
+    checkError("Before lights");
+    
+    
+    if(numLights >= 2) {
+        glUniform1f(prog->getUniform("lightColor2"), 1.0f);
+    }
+    else {
+        glUniform1f(prog->getUniform("lightColor2"), 0.0f);;
+    }
+    
+    if(numLights >= 3) {
+        glUniform1f(prog->getUniform("lightColor3"), 1.0f);
+    }
+    else {
+        glUniform1f(prog->getUniform("lightColor3"), 0.0f);
+    }
+    
+    if(numLights >= 4) {
+        glUniform1f(prog->getUniform("lightColor4"), 1.0f);
+    }
+    else {
+        glUniform1f(prog->getUniform("lightColor4"), 0.0f);
+    }
+    checkError("After passing lights");
 }
 
 
@@ -269,9 +323,9 @@ static void initGeom() {
 
   static GLfloat GrndTex[] = {
       0, 0, // back
-      0, 30,
-      30, 30,
-      30, 0 };
+      0, 5,
+      5, 5,
+      5, 0 };
 
     unsigned short idx[] = {0, 1, 2, 0, 2, 3};
 
@@ -312,15 +366,6 @@ static void init()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Initialize mesh.
-   /*shape = make_shared<Shape>();
-   shape->loadMesh(RESOURCE_DIR + "dog.obj");
-   shape->resize();
-   shape->init();
-   
-	world = make_shared<Shape>();
-   world->loadMesh(RESOURCE_DIR + "sphere.obj");
-   world->resize();
-   world->init(); */
     string filepathMTL = RESOURCE_DIR + "garl.mtl";
     
     lamp = make_shared<Shape>();
@@ -337,6 +382,16 @@ static void init()
     ball->loadMesh(RESOURCE_DIR + "bs.obj", RESOURCE_DIR);
     ball->resize();
     ball->init();
+    
+    cube = make_shared<Shape>();
+    cube->loadMesh(RESOURCE_DIR + "cube.obj", RESOURCE_DIR);
+    cube->resize();
+    cube->init();
+    
+    button = make_shared<Shape>();
+    button->loadMesh(RESOURCE_DIR + "cube.obj", RESOURCE_DIR);
+    button->resize();
+    button->init();
     
     //Load material files
 
@@ -371,10 +426,15 @@ static void init()
     ballProg->setVerbose(true);
     ballProg->setShaderNames(RESOURCE_DIR + "ball_vert.glsl", RESOURCE_DIR + "ball_frag.glsl");
     ballProg->init();
+    
+    wallProg = make_shared<Program>();
+    wallProg->setVerbose(true);
+    wallProg->setShaderNames(RESOURCE_DIR + "wall_vert.glsl", RESOURCE_DIR + "wall_frag.glsl");
+    wallProg->init();
 	
 	texture0.setFilename(RESOURCE_DIR + "fur3.bmp");
   	texture1.setFilename(RESOURCE_DIR + "world.bmp");
-  	texture2.setFilename(RESOURCE_DIR + "grass.bmp");
+  	texture2.setFilename(RESOURCE_DIR + "wood.bmp");
     texture3.setFilename(RESOURCE_DIR + "bs_diff.bmp");
     
    //////////////////////////////////////////////////////
@@ -435,7 +495,13 @@ static void init()
     lampProg->addUniform("V");
     //lampProg->addUniform("Texture3");
     //lampProg->addUniform("textOn");
-    lampProg->addAttribute("lightPosition");
+    lampProg->addUniform("pointLight1");
+    lampProg->addUniform("pointLight2");
+    lampProg->addUniform("pointLight3");
+    lampProg->addUniform("pointLight4");
+    lampProg->addUniform("lightColor2");
+    lampProg->addUniform("lightColor3");
+    lampProg->addUniform("lightColor4");
     lampProg->addUniform("MatAmb");
     lampProg->addUniform("MatDif");
     lampProg->addUniform("Spec");
@@ -443,16 +509,22 @@ static void init()
     lampProg->addAttribute("vertPos");
     lampProg->addAttribute("vertNor");
     lampProg->addAttribute("vertTex");
-    lampProg->addAttribute("normalShowing");
     //lampProg->addTexture(&texture3);
     
     // MARK: Ramp
     boardProg->addUniform("P");
     boardProg->addUniform("M");
     boardProg->addUniform("V");
+    boardProg->addUniform("pointLight1");
+    boardProg->addUniform("pointLight2");
+    boardProg->addUniform("pointLight3");
+    boardProg->addUniform("pointLight4");
+    boardProg->addUniform("lightColor2");
+    boardProg->addUniform("lightColor3");
+    boardProg->addUniform("lightColor4");
     //boardProg->addUniform("Texture3");
     //boardProg->addUniform("textOn");
-    boardProg->addAttribute("lightPosition");
+    //boardProg->addAttribute("lightPosition");
     boardProg->addUniform("MatAmb");
     boardProg->addUniform("MatDif");
     boardProg->addUniform("Spec");
@@ -460,7 +532,6 @@ static void init()
     boardProg->addAttribute("vertPos");
     boardProg->addAttribute("vertNor");
     boardProg->addAttribute("vertTex");
-    boardProg->addAttribute("normalShowing");
     //boardProg->addTexture(&texture3);
     
     // MARK: Ball
@@ -468,18 +539,40 @@ static void init()
     ballProg->addUniform("M");
     ballProg->addUniform("V");
     ballProg->addUniform("Texture3");
-    ballProg->addAttribute("lightPosition");
-    //ballProg->addUniform("MatAmb");
-    //ballProg->addUniform("MatDif");
-    //ballProg->addUniform("Spec");
-    //ballProg->addUniform("Shine");
+    ballProg->addUniform("pointLight1");
+    ballProg->addUniform("pointLight2");
+    ballProg->addUniform("pointLight3");
+    ballProg->addUniform("pointLight4");
+    ballProg->addUniform("lightColor2");
+    ballProg->addUniform("lightColor3");
+    ballProg->addUniform("lightColor4");
     ballProg->addAttribute("vertPos");
     ballProg->addAttribute("vertNor");
     ballProg->addAttribute("vertTex");
-    //ballProg->addAttribute("normalShowing");
     ballProg->addTexture(&texture3);
     
-   
+    // MARK: Wall
+    wallProg->addUniform("P");
+    wallProg->addUniform("M");
+    wallProg->addUniform("V");
+    wallProg->addUniform("pointLight1");
+    wallProg->addUniform("pointLight2");
+    wallProg->addUniform("pointLight3");
+    wallProg->addUniform("pointLight4");
+    wallProg->addUniform("lightColor2");
+    wallProg->addUniform("lightColor3");
+    wallProg->addUniform("lightColor4");
+    //wallProg->addUniform("Texture3");
+    //wallProg->addUniform("textOn");
+    //wallProg->addAttribute("lightPosition");
+    wallProg->addUniform("MatAmb");
+    wallProg->addUniform("MatDif");
+    wallProg->addUniform("Spec");
+    wallProg->addUniform("Shine");
+    wallProg->addAttribute("vertPos");
+    wallProg->addAttribute("vertNor");
+    wallProg->addAttribute("vertTex");
+    //wallProg->addTexture(&texture3);
 
 }
 
@@ -539,7 +632,7 @@ static void render()
     lampProg->bind();
     glUniformMatrix4fv(lampProg->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
     glUniformMatrix4fv(lampProg->getUniform("V"), 1, GL_FALSE, V->topMatrix().data());
-    glVertexAttrib3fv(lampProg->getAttribute("lightPosition"), lightPosition);
+    setUpLights(lampProg);
     
      M->loadIdentity();
      M->pushMatrix();
@@ -547,6 +640,7 @@ static void render()
         M->rotate(180, Vector3f(0, 1, 0));
         M->scale(Vector3f(10, 10, 10));
         //MV->rotate(cTheta, Vector3f(0, 1, 0));
+    
         glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
     
         lamp->draw(lampProg);
@@ -557,6 +651,7 @@ static void render()
         M->rotate(180, Vector3f(0, 1, 0));
         M->scale(Vector3f(10, 10, 10));
         //MV->rotate(cTheta, Vector3f(0, 1, 0));
+    
         glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
         
         lamp->draw(lampProg);
@@ -577,6 +672,7 @@ static void render()
         M->rotate(180, Vector3f(0, 1, 0));
         M->scale(Vector3f(10, 10, 10));
         //MV->rotate(cTheta, Vector3f(0, 1, 0));
+    
         glUniformMatrix4fv(lampProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
         
         lamp->draw(lampProg);
@@ -592,17 +688,21 @@ static void render()
         boardProg->bind();
             glUniformMatrix4fv(boardProg->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
             glUniformMatrix4fv(boardProg->getUniform("V"), 1, GL_FALSE, V->topMatrix().data());
-            glVertexAttrib3fv(boardProg->getAttribute("lightPosition"), lightPosition);
+            //glVertexAttrib3fv(boardProg->getAttribute("lightPosition"), lightPosition);
+            setUpLights(boardProg);
             glUniform3f(boardProg->getUniform("MatAmb"), 0.000000, 0.000000, 0.000000);
             glUniform3f(boardProg->getUniform("MatDif"), 0.696471, 0.097255, 0.097255);
             glUniform3f(boardProg->getUniform("Spec"), 0.500000, 0.500000, 0.500000);
             glUniform1f(boardProg->getUniform("Shine"), 96.078431);
             M->pushMatrix();
                 M->loadIdentity();
+    
+    
         
                 M->pushMatrix();
                     M->rotate(-10, Vector3f(0, 0, 1));
                     M->scale(Vector3f(4, 0.1, 1));
+    
                     glUniformMatrix4fv(boardProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
                     board->draw(boardProg);
                 M->popMatrix();
@@ -626,6 +726,65 @@ static void render()
         
         
             M->popMatrix();
+            M->pushMatrix();
+    
+    
+                M->rotate(-10, Vector3f(0, 0, 1));
+                M->pushMatrix();
+                    M->translate(Vector3f(-1.9, 0.6, -0.1));
+                    M->scale(Vector3f(0.1, 0.1, 0.1));
+                    if(numLights >= 2) {
+                        glUniform3f(boardProg->getUniform("MatAmb"), 0.5, 0.5, 0.5);
+                        glUniform3f(boardProg->getUniform("MatDif"), 0.696471, 0.097255, 0.097255);
+                        glUniform3f(boardProg->getUniform("Spec"), 0.500000, 0.500000, 0.500000);
+                        glUniform1f(boardProg->getUniform("Shine"), 96.078431);
+                    }
+                    else {
+                        glUniform3f(boardProg->getUniform("MatAmb"), 0.3, 0.3, 0.3);
+                        glUniform3f(boardProg->getUniform("MatDif"), 0.0, 0.0, 0.0);
+                        glUniform3f(boardProg->getUniform("Spec"), 0.500000, 0.500000, 0.500000);
+                        glUniform1f(boardProg->getUniform("Shine"), 96.078431);
+                    }
+                    glUniformMatrix4fv(boardProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+                    button->draw(boardProg);
+                M->popMatrix();
+                M->pushMatrix();
+                    M->translate(Vector3f(0, 0.6, -0.1));
+                    M->scale(Vector3f(0.1, 0.1, 0.1));
+                    if(numLights >= 3) {
+                        glUniform3f(boardProg->getUniform("MatAmb"), 0.5, 0.5, 0.5);
+                        glUniform3f(boardProg->getUniform("MatDif"), 0.696471, 0.097255, 0.097255);
+                        glUniform3f(boardProg->getUniform("Spec"), 0.500000, 0.500000, 0.500000);
+                        glUniform1f(boardProg->getUniform("Shine"), 96.078431);
+                    }
+                    else {
+                        glUniform3f(boardProg->getUniform("MatAmb"), 0.3, 0.3, 0.3);
+                        glUniform3f(boardProg->getUniform("MatDif"), 0.0, 0.0, 0.0);
+                        glUniform3f(boardProg->getUniform("Spec"), 0.500000, 0.500000, 0.500000);
+                        glUniform1f(boardProg->getUniform("Shine"), 96.078431);
+                    }
+                    glUniformMatrix4fv(boardProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+                    button->draw(boardProg);
+                M->popMatrix();
+                M->pushMatrix();
+                    M->translate(Vector3f(1.9, 0.6, -0.1));
+                    M->scale(Vector3f(0.1, 0.1, 0.1));
+                    if(numLights >= 4) {
+                        glUniform3f(boardProg->getUniform("MatAmb"), 0.5, 0.5, 0.5);
+                        glUniform3f(boardProg->getUniform("MatDif"), 0.696471, 0.097255, 0.097255);
+                        glUniform3f(boardProg->getUniform("Spec"), 0.500000, 0.500000, 0.500000);
+                        glUniform1f(boardProg->getUniform("Shine"), 96.078431);
+                    }
+                    else {
+                        glUniform3f(boardProg->getUniform("MatAmb"), 0.3, 0.3, 0.3);
+                        glUniform3f(boardProg->getUniform("MatDif"), 0.0, 0.0, 0.0);
+                        glUniform3f(boardProg->getUniform("Spec"), 0.500000, 0.500000, 0.500000);
+                        glUniform1f(boardProg->getUniform("Shine"), 96.078431);
+                    }
+                    glUniformMatrix4fv(boardProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+                    button->draw(boardProg);
+                M->popMatrix();
+            M->popMatrix();
         boardProg->unbind();
     
         GLSL::printError();
@@ -639,8 +798,7 @@ static void render()
             M->pushMatrix();
                 glUniformMatrix4fv(ballProg->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
                 glUniformMatrix4fv(ballProg->getUniform("V"), 1, GL_FALSE, V->topMatrix().data());
-                glVertexAttrib3fv(ballProg->getAttribute("lightPosition"), lightPosition);
-                
+                setUpLights(ballProg);
                 M->translate(ballPos);
                 M->rotate(bRot, Vector3f(0, 0, 1));
                 M->translate(Vector3f(0, 0.4, 0));
@@ -654,61 +812,45 @@ static void render()
         checkError("After program");
     M->popMatrix();
     
+    // MARK: Walls
+    wallProg->bind();
+        glUniformMatrix4fv(wallProg->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
+        glUniformMatrix4fv(wallProg->getUniform("V"), 1, GL_FALSE, V->topMatrix().data());
+        setUpLights(wallProg);
+        glUniform3f(wallProg->getUniform("MatAmb"), 0.000000, 0.000000, 0.000000);
+        glUniform3f(wallProg->getUniform("MatDif"), 0.016, 0.2, 0.09);
+        glUniform3f(wallProg->getUniform("Spec"), 0.35, 0.35, 0.35);
+        glUniform1f(wallProg->getUniform("Shine"), 32);
+        M->pushMatrix();
+            M->translate(Vector3f(-10, 4.5, 0));
+            M->scale(Vector3f(0.05, 6, 10));
+            glUniformMatrix4fv(wallProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+            cube->draw(wallProg);
+        M->popMatrix();
+        M->pushMatrix();
+            M->translate(Vector3f(0, 4.5, -10));
+            M->scale(Vector3f(10, 6, 0.05));
+            glUniformMatrix4fv(wallProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+            cube->draw(wallProg);
+        M->popMatrix();
+        M->pushMatrix();
+            M->translate(Vector3f(10, 4.5, 0));
+            M->scale(Vector3f(0.05, 6, 10));
+            glUniformMatrix4fv(wallProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+            cube->draw(wallProg);
+        M->popMatrix();
+        if(eye.z() < 10) {
+            M->pushMatrix();
+                M->translate(Vector3f(0, 4.5, 10));
+                M->scale(Vector3f(10, 6, 0.05));
+                glUniformMatrix4fv(wallProg->getUniform("M"), 1, GL_FALSE, M->topMatrix().data());
+                cube->draw(wallProg);
+            M->popMatrix();
+        }
     
-    //Draw marble track
-    /*marbleProg->bind();
-    glUniformMatrix4fv(marbleProg->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
-    //glUniformMatrix4fv(marbleProg->getUniform("V"), 1, GL_FALSE, V->topMatrix().data());
-    //glVertexAttrib3fv(marbleProg->getAttribute("lightPosition"), lightPosition);
-    MV->pushMatrix();
     
-    MV->loadIdentity();
-    MV->translate(Vector3f(1, 0, -4));
-    //MV->rotate(180, Vector3f(0, 1, 0));
-    MV->scale(Vector3f(1, 1, 1));
-    //MV->rotate(cTheta, Vector3f(0, 1, 0));
-    glUniformMatrix4fv(marbleProg->getUniform("MV"), 1, GL_FALSE, MV->topMatrix().data());
+    wallProg->unbind();
     
-    marbletrack->draw(marbleProg);
-    MV->popMatrix();
-    marbleProg->unbind();*/
-    
-    
-    //draw the dog mesh
-	/*prog0->bind();
-	glUniformMatrix4fv(prog0->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
-
-	MV->pushMatrix();
-
-	MV->loadIdentity();
-   MV->translate(Vector3f(0, cHeight, -5));
-	
-	MV->pushMatrix();
-   MV->translate(Vector3f(-1, 0, 0));
-   MV->rotate(cTheta, Vector3f(0, 1, 0));
-	glUniformMatrix4fv(prog0->getUniform("MV"), 1, GL_FALSE, MV->topMatrix().data());
-
-   shape->draw(prog0);
-	MV->popMatrix();
-	prog0->unbind();
-
-	//draw the world sphere	
-	prog1->bind();
-	glUniformMatrix4fv(prog1->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
-	
-	MV->pushMatrix();
-	MV->translate(Vector3f(1, 0, 0));
-   MV->rotate(cTheta, Vector3f(0, 1, 0));
-	glUniformMatrix4fv(prog1->getUniform("MV"), 1, GL_FALSE, MV->topMatrix().data());
-    
-	world->draw(prog1);
-	
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);
-	MV->popMatrix();
-	prog1->unbind();
-     */
 	//draw the ground plane	
 	prog2->bind();
     M->pushMatrix();

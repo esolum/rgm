@@ -153,6 +153,8 @@
 		6D0F19451C9737D4002DCFB1 /* board_frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = board_frag.glsl; path = resources/board_frag.glsl; sourceTree = "<group>"; };
 		6D0F19461C977D9C002DCFB1 /* ball_vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = ball_vert.glsl; path = resources/ball_vert.glsl; sourceTree = "<group>"; };
 		6D0F19471C977DB0002DCFB1 /* ball_frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = ball_frag.glsl; path = resources/ball_frag.glsl; sourceTree = "<group>"; };
+		6D2D166B1C9AF2610016FE2F /* wall_vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = wall_vert.glsl; path = resources/wall_vert.glsl; sourceTree = "<group>"; };
+		6D2D166C1C9AF2740016FE2F /* wall_frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = wall_frag.glsl; path = resources/wall_frag.glsl; sourceTree = "<group>"; };
 		6D6BF8A91C8E8D74006948BD /* lamp_frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = lamp_frag.glsl; path = resources/lamp_frag.glsl; sourceTree = "<group>"; };
 		6D6BF8AA1C8E8DDD006948BD /* lamp_vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = lamp_vert.glsl; path = ../../resources/lamp_vert.glsl; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B8F28D669E341F9BE23BA96 /* libglfw3.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libglfw3.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -197,6 +199,8 @@
 				FA769E18AEB64037B3917F3B /* tex_frag0.glsl */,
 				6D6BF8AA1C8E8DDD006948BD /* lamp_vert.glsl */,
 				6D6BF8A91C8E8D74006948BD /* lamp_frag.glsl */,
+				6D2D166B1C9AF2610016FE2F /* wall_vert.glsl */,
+				6D2D166C1C9AF2740016FE2F /* wall_frag.glsl */,
 				6D0F19421C95D730002DCFB1 /* garl.mtl */,
 				BCE1113A49FB4CBDAA77E242 /* tex_frag1.glsl */,
 				284992616C2A4EBC944A5535 /* tex_frag2.glsl */,

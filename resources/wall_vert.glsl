@@ -22,6 +22,7 @@ out float att2;
 out float att3;
 out float att4;
 
+
 void main()
 {
     gl_Position = P * V * M * vertPos;
@@ -34,18 +35,19 @@ void main()
     lightDir3 = pointLight3 - position;
     lightDir4 = pointLight4 - position;
     
-    float att = 3 / distance(position, pointLight1);
+    float att = 5/ distance(position, pointLight1);
     att1 = min(att , 1.0);
     
-    att = 3 / distance(position, pointLight2);
+    att = 5 / distance(position, pointLight2);
     att2 = min(att , 1.0);
     
-    att = 3 / distance(position, pointLight3);
+    att = 5 / distance(position, pointLight3);
     att3 = min(att , 1.0);
     
-    att = 3 / distance(position, pointLight4);
+    att = 5 / distance(position, pointLight4);
     att4 = min(att , 1.0);
-
+    
     /* pass through the texture coordinates to be interpolated */
     vTexCoord = vertTex;
+    
 }

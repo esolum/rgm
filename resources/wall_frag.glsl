@@ -1,11 +1,12 @@
 #version 330 core
-//uniform vec3 MatAmb;
-//uniform vec3 MatDif;
-//uniform vec3 Spec;
-//uniform float Shine;
+
 uniform float lightColor2;
 uniform float lightColor3;
 uniform float lightColor4;
+uniform vec3 MatAmb;
+uniform vec3 MatDif;
+uniform vec3 Spec;
+uniform float Shine;
 in vec3 fragNor;
 in float mode;
 in vec3 View;
@@ -20,8 +21,6 @@ in float att2;
 in float att3;
 in float att4;
 out vec4 color;
-uniform sampler2D Texture3;
-
 
 void main()
 {
@@ -33,8 +32,6 @@ void main()
     vec4 color2;
     vec4 color3;
     vec4 color4;
-    
-    vec4 texColor3 = texture(Texture3, vTexCoord);
     
     //Apparently GLSL doesn't want to read my function so I have to do this the hard way.
     //Compute the color attenuation for point light 1
@@ -53,8 +50,7 @@ void main()
     float cosBeta = max(dot(View2, R), 0);
     
     
-    //color1 = vec4(MatAmb*white + MatDif * white * cosTheta + pow(cosBeta, Shine) * Spec * white, 1.0);
-    color1 = vec4(texColor3.r*vColor.r, texColor3.g*vColor.g, texColor3.b*vColor.b, 1);
+    color1 = vec4(MatAmb*white + MatDif * white * cosTheta + pow(cosBeta, Shine) * Spec * white, 1.0);
     color1 = vec4(color1.r * att1, color1.g * att1, color1.b * att1, 1.0);
     
     
@@ -72,8 +68,7 @@ void main()
     View2 = normalize(View);
     cosBeta = max(dot(View2, R), 0);
     
-    //color2 = vec4(MatAmb*lightColor2  + MatDif * lightColor2 * cosTheta + pow(cosBeta, Shine) * Spec * lightColor2, 1.0);
-    color2 = vec4(texColor3.r*vColor.r * lightColor2, texColor3.g*vColor.g * lightColor2, texColor3.b*vColor.b * lightColor2, 1);
+    color2 = vec4(MatAmb*lightColor2  + MatDif * lightColor2 * cosTheta + pow(cosBeta, Shine) * Spec * lightColor2, 1.0);
     color2 = vec4(color2.r * att2, color2.g * att2, color2.b * att2, 1.0);
     
     //POINT LIGHT 3
@@ -90,8 +85,7 @@ void main()
     View2 = normalize(View);
     cosBeta = max(dot(View2, R), 0);
     
-    //color3 = vec4(MatAmb*lightColor3 + MatDif * lightColor3 * cosTheta + pow(cosBeta, Shine) * Spec * lightColor3, 1.0);
-    color3 = vec4(texColor3.r*vColor.r * lightColor3, texColor3.g*vColor.g * lightColor3, texColor3.b*vColor.b * lightColor3, 1);
+    color3 = vec4(MatAmb*lightColor3 + MatDif * lightColor3 * cosTheta + pow(cosBeta, Shine) * Spec * lightColor3, 1.0);
     color3 = vec4(color3.r * att3, color3.g * att3, color3.b * att3, 1.0);
     
     //POINT LIGHT 4
@@ -107,11 +101,11 @@ void main()
     View2 = normalize(View);
     cosBeta = max(dot(View2, R), 0);
     
-    //color4 = vec4(MatAmb*lightColor4 + MatDif * lightColor4 * cosTheta + pow(cosBeta, Shine) * Spec * lightColor4, 1.0);
-    color4 = vec4(texColor3.r*vColor.r * lightColor4, texColor3.g*vColor.g * lightColor4, texColor3.b*vColor.b * lightColor4, 1);
+    color4 = vec4(MatAmb*lightColor4 + MatDif * lightColor4 * cosTheta + pow(cosBeta, Shine) * Spec * lightColor4, 1.0);
     color4 = vec4(color4.r * att4, color4.g * att4, color4.b * att4, 1.0);
     
     color = color1 + color2 + color3 + color4;
-    /* a color that could be blended - or be shading */
+    
+    
     
 }

@@ -21,7 +21,7 @@ void main() {
     vec3 View2 = normalize(View);
     float cosBeta = max(dot(View2, R), 0);
     
-    vec4 BaseColor = vec4(vColor*LightColor + vColor * LightColor * cosTheta + pow(cosBeta, 20) * vColor * LightColor, 1.0);
+    vec4 BaseColor = vec4(vec3(0, 0, 0)*LightColor + vColor * LightColor * cosTheta + pow(cosBeta, 20) * vColor * LightColor, 1.0);
 
   vec4 texColor0 = texture(Texture0, vTexCoord);
  
